@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Draaiorgel De Arabier</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#C9A84C">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Draaiorgel">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IM+Fell+English:ital@0;1&display=swap');
+  :root {
+    --wood:#6B3A2A; --wood-l:#8B5E3C; --wood-d:#3D1F12;
+    --gold:#C9A84C; --gold-l:#E8CC7A;
+    --cream:#F5ECD7; --ink:#1A0F0A; --red:#8B2020; --paper:#EEE0C2;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    background:radial-gradient(ellipse at center,#1a0f0a 0%,#0a0503 100%);
+    min-height:100vh; display:flex; flex-direction:column;
+    align-items:center; justify-content:flex-start;
+    font-family:'IM Fell English',serif; color:var(--cream);
+    overflow-x:hidden; padding:16px 8px 24px;
+  }
+  body::before{
+    content:'';position:fixed;inset:0;pointer-events:none;
+    background-image:
+      radial-gradient(1px 1px at 12% 22%,rgba(201,168,76,.5) 0%,transparent 100%),
+      radial-gradient(1px 1px at 78% 14%,rgba(201,168,76,.4) 0%,transparent 100%),
+      radial-gradient(1px 1px at 52% 78%,rgba(201,168,76,.3) 0%,transparent 100%),
+      radial-gradient(1px 1px at 6%  88%,rgba(201,168,76,.4) 0%,transparent 100%),
+      radial-gradient(1px 1px at 94% 52%,rgba(201,168,76,.3) 0%,transparent 100%),
+      radial-gradient(1px 1px at 38% 8%, rgba(201,168,76,.3) 0%,transparent 100%);
+  }
+
+  .scene{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%;max-width:400px;}
+
+  .title{
+    font-family:'Playfair Display',serif;
+    font-size:clamp(1.4rem,5vw,2.4rem);font-weight:700;
+    color:var(--gold-l);text-shadow:0 0 24px rgba(201,168,76,.5),2px 2px 0 var(--wood-d);
+    letter-spacing:.04em;text-align:center;line-height:1.2;
+  }
+  .subtitle{
+    font-style:italic;color:rgba(201,168,76,.65);
+    font-size:.75rem;letter-spacing:.18em;text-transform:uppercase;margin-top:-4px;text-align:center;
+  }
+
+  /* ORGAN */
+  .organ{position:relative;width:100%;}
+  .organ-body{
+    background:linear-gradient(180deg,var(--wood-l) 0%,var(--wood) 40%,var(--wood-d) 100%);
+    border-radius:14px 14px 4px 4px;padding:14px;
+    box-shadow:inset 0 2px 6px rgba(255,255,255,.15),inset 0 -4px 12px rgba(0,0,0,.4),
+      0 8px 28px rgba(0,0,0,.7),0 0 0 2px var(--gold),0 0 0 4px var(--wood-d);
+    position:relative;
+  }
+  .organ-body::before{
+    content:'';position:absolute;inset:0;border-radius:14px 14px 4px 4px;pointer-events:none;
+    background:repeating-linear-gradient(90deg,transparent 0,transparent 18px,rgba(0,0,0,.04) 18px,rgba(0,0,0,.04) 19px);
+  }
+  .organ-top{text-align:center;font-size:1.1rem;color:var(--gold);margin-bottom:8px;
+    text-shadow:0 0 10px rgba(201,168,76,.6);letter-spacing:.3em;}
+  .flourish{position:absolute;color:var(--gold);font-size:1rem;opacity:.3;pointer-events:none;}
+  .flourish.tl{top:4px;left:8px;} .flourish.tr{top:4px;right:8px;transform:scaleX(-1);}
+  .flourish.bl{bottom:4px;left:8px;transform:scaleY(-1);} .flourish.br{bottom:4px;right:8px;transform:scale(-1,-1);}
+
+  /* PIPES */
+  .pipes-row{display:flex;justify-content:center;align-items:flex-end;gap:3px;margin-bottom:8px;height:52px;}
+  .pipe{
+    background:linear-gradient(180deg,#d4af5a 0%,#8B6914 50%,#5a3d0a 100%);
+    border-radius:3px 3px 0 0;
+    box-shadow:inset 1px 0 2px rgba(255,255,255,.2),1px 0 3px rgba(0,0,0,.4);
+    transition:filter .08s,transform .08s;position:relative;overflow:hidden;
+  }
+  .pipe::after{content:'';position:absolute;top:0;left:30%;width:20%;height:100%;
+    background:rgba(255,255,255,.15);border-radius:50%;}
+  .pipe.active{filter:brightness(1.7) drop-shadow(0 0 8px rgba(255,200,50,.9));transform:scaleY(1.07);}
+
+  /* VIZ */
+  .viz-row{display:flex;justify-content:center;align-items:flex-end;gap:2px;height:26px;margin:3px 0;}
+  .viz-bar{width:5px;background:linear-gradient(180deg,var(--gold-l),var(--gold),var(--red));
+    border-radius:2px 2px 0 0;min-height:2px;}
+
+  /* DISPLAY */
+  .deco-panel{
+    background:linear-gradient(135deg,#F5ECD7 0%,#E8D5AA 100%);
+    border-radius:6px;border:2px solid var(--gold);
+    box-shadow:inset 0 0 10px rgba(0,0,0,.08),0 2px 4px rgba(0,0,0,.3);
+    padding:8px 10px;margin-bottom:8px;color:var(--ink);text-align:center;
+  }
+  .deco-panel::before{content:'✦ ✦ ✦';display:block;color:var(--gold);
+    font-size:.52rem;letter-spacing:.5em;margin-bottom:3px;}
+  .song-name{
+    font-family:'Playfair Display',serif;font-size:.85rem;font-weight:700;
+    color:var(--wood-d);min-height:1.2em;line-height:1.3;
+  }
+  .song-name.playing{animation:shimmer 2s ease-in-out infinite;}
+  @keyframes shimmer{0%,100%{color:var(--wood-d);}50%{color:var(--red);}}
+  .song-scroll{font-size:.6rem;color:var(--wood);font-style:italic;margin-top:2px;}
+
+  /* PROGRESS */
+  .progress-wrap{background:var(--wood-d);border-radius:3px;height:5px;margin-bottom:8px;
+    border:1px solid var(--gold);overflow:hidden;}
+  .progress-bar{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-l));
+    width:0%;transition:width .5s linear;border-radius:3px;}
+
+  /* TIME */
+  .time-row{display:flex;justify-content:space-between;font-size:.58rem;
+    color:rgba(201,168,76,.6);margin-top:-4px;margin-bottom:6px;font-style:italic;}
+
+  /* TAPE */
+  .tape-slot{background:var(--wood-d);border-radius:4px;height:24px;
+    display:flex;align-items:center;overflow:hidden;margin-bottom:8px;
+    border:1px solid var(--gold);box-shadow:inset 0 2px 6px rgba(0,0,0,.6);}
+  .tape{display:flex;align-items:center;height:100%;white-space:nowrap;transform:translateX(100%);}
+  .tape.running{animation:tape-run linear infinite;}
+  @keyframes tape-run{from{transform:translateX(100%);}to{transform:translateX(-100%);}}
+  .tape-segment{display:inline-flex;align-items:center;height:18px;background:var(--paper);
+    margin:0 2px;border-radius:2px;padding:0 4px;}
+  .hole{display:inline-block;width:4px;height:4px;background:var(--wood-d);
+    border-radius:50%;margin:0 1px;box-shadow:inset 0 1px 2px rgba(0,0,0,.5);}
+
+  /* CONTROLS ROW */
+  .controls-row{display:flex;align-items:center;justify-content:space-between;gap:6px;}
+
+  /* CRANK */
+  .crank-area{display:flex;flex-direction:column;align-items:center;gap:3px;flex-shrink:0;}
+  .crank-label{font-size:.55rem;color:var(--gold);letter-spacing:.1em;text-transform:uppercase;}
+  .crank-outer{
+    width:50px;height:50px;
+    background:radial-gradient(circle at 40% 35%,var(--gold-l),var(--gold),var(--wood));
+    border-radius:50%;display:flex;align-items:center;justify-content:center;
+    box-shadow:0 4px 12px rgba(0,0,0,.5),inset 0 1px 3px rgba(255,255,255,.3);
+    cursor:pointer;position:relative;user-select:none;-webkit-tap-highlight-color:transparent;
+    transition:box-shadow .15s;
+  }
+  .crank-outer:active{box-shadow:0 2px 6px rgba(0,0,0,.5);transform:translateY(1px);}
+  .crank-inner{width:15px;height:15px;background:var(--wood-d);border-radius:50%;border:2px solid var(--gold);}
+  .crank-arm{
+    position:absolute;width:4px;height:19px;
+    background:linear-gradient(180deg,var(--gold-l),var(--gold));
+    border-radius:2px;transform-origin:bottom center;
+    bottom:50%;left:calc(50% - 2px);
+  }
+  .crank-arm.spinning{animation:spin .5s linear infinite;}
+  @keyframes spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
+  .crank-handle{position:absolute;width:8px;height:8px;background:var(--red);
+    border-radius:50%;top:3px;left:calc(50% - 1px);border:1px solid var(--wood-d);}
+
+  /* CARDS */
+  .cards-area{flex:1;display:flex;flex-direction:column;gap:3px;
+    max-height:215px;overflow-y:auto;min-width:0;}
+  .cards-area::-webkit-scrollbar{width:3px;}
+  .cards-area::-webkit-scrollbar-track{background:var(--wood-d);}
+  .cards-area::-webkit-scrollbar-thumb{background:var(--gold);border-radius:2px;}
+  .cards-label{font-size:.55rem;color:var(--gold);letter-spacing:.1em;
+    text-transform:uppercase;margin-bottom:2px;text-align:center;}
+  .song-card{
+    background:linear-gradient(135deg,var(--paper) 0%,#ddd0a8 100%);
+    border:1px solid var(--gold);border-radius:4px;
+    padding:4px 6px;cursor:pointer;
+    color:var(--ink);font-size:.64rem;
+    box-shadow:0 1px 3px rgba(0,0,0,.3);
+    display:flex;align-items:center;gap:4px;
+    -webkit-tap-highlight-color:transparent;
+    transition:background .15s,transform .15s;
+  }
+  .song-card:active{transform:scale(.97);}
+  .song-card.active{background:linear-gradient(135deg,#8B2020,#5a1010);color:var(--cream);border-color:var(--red);}
+  .card-num{font-size:.52rem;opacity:.55;min-width:14px;flex-shrink:0;}
+  .card-holes{display:flex;gap:1px;flex-shrink:0;}
+  .card-hole{width:3px;height:3px;background:var(--wood-d);border-radius:50%;opacity:.5;}
+  .card-hole.lit{background:var(--cream);opacity:1;box-shadow:0 0 2px white;}
+  .card-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+  /* BELLOWS */
+  .bellows-area{display:flex;flex-direction:column;align-items:center;gap:3px;flex-shrink:0;}
+  .bellows-label{font-size:.55rem;color:var(--gold);letter-spacing:.1em;text-transform:uppercase;}
+  .bellows{display:flex;flex-direction:column;gap:2px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+  .bellows-fold{width:36px;height:6px;
+    background:linear-gradient(90deg,var(--wood-d) 0%,var(--wood-l) 30%,var(--wood) 100%);
+    border-radius:1px;transition:transform .12s;border-top:1px solid var(--gold);}
+  .bellows:active .bellows-fold{transform:scaleY(.7);}
+  .vol-display{font-size:.65rem;color:var(--gold);text-align:center;}
+
+  /* LEGS */
+  .organ-legs{display:flex;justify-content:space-between;padding:0 18px;}
+  .leg{width:13px;height:18px;background:linear-gradient(180deg,var(--wood),var(--wood-d));
+    border-radius:0 0 4px 4px;box-shadow:1px 2px 4px rgba(0,0,0,.5);}
+
+  /* STATUS */
+  .status{font-size:.68rem;color:rgba(201,168,76,.7);text-align:center;
+    font-style:italic;min-height:1.2em;letter-spacing:.04em;}
+
+  /* INSTALL BANNER */
+  .install-banner{
+    display:none;
+    background:linear-gradient(135deg,var(--wood-l),var(--wood));
+    border:1px solid var(--gold);border-radius:8px;
+    padding:8px 14px;text-align:center;width:100%;
+    box-shadow:0 2px 8px rgba(0,0,0,.4);
+  }
+  .install-banner.visible{display:block;}
+  .install-btn{
+    background:linear-gradient(135deg,var(--gold-l),var(--gold));
+    border:none;border-radius:4px;padding:6px 16px;
+    font-family:'IM Fell English',serif;font-size:.8rem;
+    color:var(--ink);cursor:pointer;margin-top:4px;
+    box-shadow:0 2px 6px rgba(0,0,0,.3);
+  }
+  .install-note{font-size:.6rem;color:rgba(201,168,76,.7);font-style:italic;margin-top:2px;}
+
+  /* OFFLINE indicator */
+  .offline-dot{
+    display:inline-block;width:6px;height:6px;border-radius:50%;
+    background:#888;margin-right:4px;vertical-align:middle;
+  }
+  .offline-dot.online{background:#4caf50;box-shadow:0 0 4px #4caf50;}
+
+  /* FLOATING NOTES */
+  .note{position:fixed;font-size:1.2rem;pointer-events:none;
+    animation:float-note 3s ease-out forwards;z-index:10;
+    filter:drop-shadow(0 0 5px rgba(201,168,76,.8));}
+  @keyframes float-note{
+    0%{opacity:1;transform:translateY(0) rotate(0deg) scale(1);}
+    100%{opacity:0;transform:translateY(-100px) rotate(22deg) scale(.4);}
+  }
+</style>
+</head>
+<body>
+<div class="scene">
+  <div class="title">🎶 Draaiorgel<br>De Arabier</div>
+  <div class="subtitle">Barrel Organ · Hi-Fi · Oostende</div>
+
+  <!-- Install banner -->
+  <div class="install-banner" id="installBanner">
+    <div style="font-size:.72rem;color:var(--gold-l);">
+      <span class="offline-dot" id="offlineDot"></span>Встановити як додаток
+    </div>
+    <button class="install-btn" id="installBtn">📲 Додати на екран</button>
+    <div class="install-note" id="installNote">працює офлайн після першого завантаження</div>
+  </div>
+
+  <div class="organ">
+    <div class="organ-body">
+      <div class="flourish tl">❧</div><div class="flourish tr">❧</div>
+      <div class="flourish bl">❧</div><div class="flourish br">❧</div>
+
+      <div class="organ-top">⬥ ◈ ⬥</div>
+      <div class="pipes-row" id="pipesRow"></div>
+      <div class="viz-row" id="vizRow"></div>
+
+      <div class="deco-panel">
+        <div class="song-name" id="songName">Оберіть мелодію</div>
+        <div class="song-scroll" id="songScroll">— вставте картку і крутіть ручку —</div>
+      </div>
+
+      <div class="progress-wrap"><div class="progress-bar" id="progressBar"></div></div>
+      <div class="time-row"><span id="timeCur">0:00</span><span id="timeTot">0:00</span></div>
+
+      <div class="tape-slot">
+        <div class="tape" id="tape">
+          <div class="tape-segment">
+            <span class="hole"></span><span class="hole"></span><span class="hole"></span>
+            <span class="hole"></span><span class="hole"></span><span class="hole"></span>
+            <span class="hole"></span><span class="hole"></span><span class="hole"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="controls-row">
+        <div class="crank-area">
+          <div class="crank-label">Ручка</div>
+          <div class="crank-outer" id="crank" onclick="togglePlay()">
+            <div class="crank-arm" id="crankArm"><div class="crank-handle"></div></div>
+            <div class="crank-inner"></div>
+          </div>
+        </div>
+
+        <div class="cards-area">
+          <div class="cards-label">Draaiorgel De Arabier</div>
+          <div id="songCards"></div>
+        </div>
+
+        <div class="bellows-area">
+          <div class="bellows-label">Міхи</div>
+          <div class="bellows" id="bellows" onclick="toggleMute()">
+            <div class="bellows-fold"></div><div class="bellows-fold"></div>
+            <div class="bellows-fold"></div><div class="bellows-fold"></div>
+          </div>
+          <div class="vol-display" id="volDisplay">🔊</div>
+        </div>
+      </div>
+
+      <div class="status" id="status">Натисніть на картку щоб розпочати</div>
+    </div>
+    <div class="organ-legs">
+      <div class="leg"></div><div class="leg"></div><div class="leg"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// === TRACKS ===
+const BASE = 'https://archive.org/download/lp_barrel-organ-in-hi-fi_draaiorgel-de-arabier';
+const tracks = [
+  { name: 'Va Pensiero',                                      emoji: '🕊️', holes:[1,0,1,1,0,0,1,0,1], url: BASE+'/01.01.%20Va%20Pensiero.mp3' },
+  { name: "Heut' Nacht Wenn Die Blumen Träumen",              emoji: '🌸', holes:[0,1,1,0,1,0,1,1,0], url: BASE+'/01.02.%20Heut%27%20Nacht%20Wenn%20Die%20Blumen%20Traumen.mp3' },
+  { name: 'Blaze Away',                                       emoji: '🎺', holes:[1,1,0,1,1,0,1,0,1], url: BASE+'/01.03.%20Blaze%20Away.mp3' },
+  { name: "La Plus Belle Valse D'amour",                      emoji: '💃', holes:[1,0,0,1,0,1,1,0,1], url: BASE+'/01.04.%20La%20Plus%20Belle%20Valse%20D%27amour.mp3' },
+  { name: 'Rose-Marie Polka: Anneliese; The Happy Wanderer',  emoji: '🌹', holes:[0,1,1,1,0,1,0,0,1], url: BASE+'/01.05.%20Rose-Marie%20Polka%3A%20Anneliese%3B%20The%20Happy%20Wanderer.mp3' },
+  { name: "La Ronde De L'amour",                              emoji: '🎠', holes:[1,0,1,0,1,1,0,1,0], url: BASE+'/02.01.%20La%20Ronde%20De%20L%27amour.mp3' },
+  { name: 'Oh Baby Mine; Mister Sandman',                     emoji: '🌙', holes:[0,1,0,1,0,1,0,1,1], url: BASE+'/02.02.%20Oh%20Baby%20Mine%3B%20Mister%20Sandman.mp3' },
+  { name: 'March Of The Herald',                              emoji: '👑', holes:[1,1,0,0,1,1,0,1,1], url: BASE+'/02.03.%20March%20Of%20The%20Herald.mp3' },
+  { name: 'The Theme From Limelight; Vaya Con Dios',          emoji: '🎬', holes:[1,0,0,1,0,1,0,1,0], url: BASE+'/02.04.%20The%20Theme%20From%20Limelight%3B%20Vaya%20Con%20Dios.mp3' },
+  { name: "Mit Musik Durch's Leben",                          emoji: '🎊', holes:[1,1,1,1,0,0,1,1,1], url: BASE+"/02.05.%20Mit%20Musik%20Durch%27s%20Leben.mp3" },
+];
+
+// === STATE ===
+let currentIdx = null;
+let audio = null;
+let muted = false;
+let progTimer = null;
+let animTimer = null;
+
+// === BUILD UI ===
+// Pipes
+const pipesRow = document.getElementById('pipesRow');
+const pH=[24,34,44,52,44,38,28,20,32,48,40,26,36,46,30];
+const pW=[8,10,12,14,12,11,9,8,10,13,11,9,10,12,9];
+const pipeEls=[];
+pH.forEach((h,i)=>{
+  const p=document.createElement('div');p.className='pipe';
+  p.style.height=h+'px';p.style.width=pW[i]+'px';
+  pipesRow.appendChild(p);pipeEls.push(p);
+});
+
+// Viz bars
+const vizRow=document.getElementById('vizRow');
+const vizBars=[];
+for(let i=0;i<22;i++){
+  const b=document.createElement('div');b.className='viz-bar';b.style.height='2px';
+  vizRow.appendChild(b);vizBars.push(b);
+}
+
+// Song cards
+const cardsEl=document.getElementById('songCards');
+tracks.forEach((t,idx)=>{
+  const card=document.createElement('div');card.className='song-card';
+  const hh=t.holes.map(h=>`<div class="card-hole${h?' lit':''}"></div>`).join('');
+  card.innerHTML=`<span class="card-num">${idx+1}.</span><div class="card-holes">${hh}</div><span class="card-text">${t.emoji} ${t.name}</span>`;
+  card.onclick=()=>selectTrack(idx);
+  cardsEl.appendChild(card);
+});
+
+// === AUDIO ===
+function fmt(s){
+  if(!s||isNaN(s))return'0:00';
+  const m=Math.floor(s/60),ss=Math.floor(s%60);
+  return m+':'+(ss<10?'0':'')+ss;
+}
+
+function selectTrack(idx){
+  stopAudio();
+  currentIdx=idx;
+  document.querySelectorAll('.song-card').forEach((c,i)=>c.classList.toggle('active',i===idx));
+  const t=tracks[idx];
+  document.getElementById('songName').textContent=t.emoji+' '+t.name;
+  document.getElementById('songScroll').textContent='— картку вставлено —';
+  document.getElementById('status').textContent='Завантаження... ⚙️';
+  document.getElementById('timeTot').textContent='0:00';
+  document.getElementById('timeCur').textContent='0:00';
+  startAudio();
+}
+
+function startAudio(){
+  if(currentIdx===null)return;
+  const t=tracks[currentIdx];
+  audio=new Audio();
+  audio.crossOrigin='anonymous';
+  audio.src=t.url;
+  audio.volume=muted?0:0.85;
+  audio.play().then(()=>{
+    document.getElementById('crankArm').classList.add('spinning');
+    document.getElementById('songName').classList.add('playing');
+    document.getElementById('tape').classList.add('running');
+    document.getElementById('tape').style.animationDuration='7s';
+    document.getElementById('status').textContent='Грає... 🎵';
+    startAnim();startProgress();
+  }).catch(e=>{
+    document.getElementById('status').textContent='Помилка — перевірте інтернет 😞';
+    console.error(e);
+  });
+  audio.onloadedmetadata=()=>{
+    document.getElementById('timeTot').textContent=fmt(audio.duration);
+  };
+  audio.onended=()=>{
+    const next=(currentIdx+1)%tracks.length;
+    selectTrack(next);
+  };
+}
+
+function stopAudio(){
+  if(audio){audio.pause();audio.src='';audio=null;}
+  document.getElementById('crankArm').classList.remove('spinning');
+  document.getElementById('songName').classList.remove('playing');
+  document.getElementById('tape').classList.remove('running');
+  pipeEls.forEach(p=>p.classList.remove('active'));
+  if(progTimer){clearInterval(progTimer);progTimer=null;}
+  if(animTimer){clearInterval(animTimer);animTimer=null;}
+  vizBars.forEach(b=>b.style.height='2px');
+  document.getElementById('progressBar').style.width='0%';
+}
+
+function togglePlay(){
+  if(audio&&!audio.paused){
+    audio.pause();
+    document.getElementById('crankArm').classList.remove('spinning');
+    document.getElementById('songName').classList.remove('playing');
+    document.getElementById('tape').classList.remove('running');
+    document.getElementById('status').textContent='Пауза... натисніть ще раз ⏸';
+    if(animTimer){clearInterval(animTimer);animTimer=null;}
+    pipeEls.forEach(p=>p.classList.remove('active'));
+    vizBars.forEach(b=>b.style.height='2px');
+  } else if(audio&&audio.paused){
+    audio.play();
+    document.getElementById('crankArm').classList.add('spinning');
+    document.getElementById('songName').classList.add('playing');
+    document.getElementById('tape').classList.add('running');
+    document.getElementById('status').textContent='Грає... 🎵';
+    startAnim();
+  } else {
+    if(currentIdx===null){
+      shakeCrank();
+      document.getElementById('status').textContent='Спочатку оберіть картку! 👆';
+    }
+  }
+}
+
+function toggleMute(){
+  muted=!muted;
+  if(audio)audio.volume=muted?0:0.85;
+  document.getElementById('volDisplay').textContent=muted?'🔇':'🔊';
+  document.getElementById('status').textContent=muted?'Тихо...':'Гучно! 🔊';
+}
+
+function startAnim(){
+  if(animTimer)clearInterval(animTimer);
+  let frame=0;
+  animTimer=setInterval(()=>{
+    if(!audio||audio.paused)return;
+    frame++;
+    // pipes
+    const active=new Set();
+    for(let i=0;i<3;i++)active.add(Math.floor(Math.random()*pipeEls.length));
+    pipeEls.forEach((p,i)=>p.classList.toggle('active',active.has(i)));
+    // viz
+    vizBars.forEach(b=>{b.style.height=(2+Math.random()*22)+'px';});
+    if(frame%7===0)spawnNote();
+  },140);
+}
+
+function startProgress(){
+  if(progTimer)clearInterval(progTimer);
+  progTimer=setInterval(()=>{
+    if(!audio||!audio.duration)return;
+    const pct=(audio.currentTime/audio.duration)*100;
+    document.getElementById('progressBar').style.width=pct+'%';
+    document.getElementById('timeCur').textContent=fmt(audio.currentTime);
+  },500);
+}
+
+function shakeCrank(){
+  const c=document.getElementById('crank');
+  let n=0;const ti=setInterval(()=>{
+    c.style.transform=n%2?'rotate(5deg)':'rotate(-5deg)';n++;
+    if(n>6){clearInterval(ti);c.style.transform='';}
+  },80);
+}
+
+function spawnNote(){
+  const notes=['♩','♪','♫','♬','🎵','🎶'];
+  const el=document.createElement('div');el.className='note';
+  el.textContent=notes[Math.floor(Math.random()*notes.length)];
+  const organ=document.querySelector('.organ');
+  const rect=organ.getBoundingClientRect();
+  el.style.left=(rect.left+Math.random()*rect.width)+'px';
+  el.style.top=(rect.top+10)+'px';
+  el.style.color=`hsl(${38+Math.random()*18},80%,${56+Math.random()*20}%)`;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),3000);
+}
+
+// === PWA ===
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('./sw.js').then(reg=>{
+    console.log('SW registered');
+  }).catch(e=>console.log('SW error',e));
+}
+
+// Online/offline indicator
+const dot=document.getElementById('offlineDot');
+function updateOnline(){
+  dot.classList.toggle('online',navigator.onLine);
+  dot.title=navigator.onLine?'Онлайн':'Офлайн';
+}
+window.addEventListener('online',updateOnline);
+window.addEventListener('offline',updateOnline);
+updateOnline();
+
+// Install prompt
+let deferredPrompt=null;
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault();
+  deferredPrompt=e;
+  document.getElementById('installBanner').classList.add('visible');
+});
+document.getElementById('installBtn').onclick=async()=>{
+  if(!deferredPrompt)return;
+  deferredPrompt.prompt();
+  const{outcome}=await deferredPrompt.userChoice;
+  if(outcome==='accepted'){
+    document.getElementById('installBanner').classList.remove('visible');
+  }
+  deferredPrompt=null;
+};
+window.addEventListener('appinstalled',()=>{
+  document.getElementById('installBanner').classList.remove('visible');
+});
+
+// iOS: show manual instruction
+const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
+const isInStandalone=window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone;
+if(isIOS&&!isInStandalone){
+  document.getElementById('installBanner').classList.add('visible');
+  document.getElementById('installBtn').style.display='none';
+  document.getElementById('installNote').textContent='iOS: натисніть Share → "На екран Домашнього екрана"';
+}
+</script>
+</body>
+</html>
